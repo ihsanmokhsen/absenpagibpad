@@ -96,7 +96,7 @@ export default function Home() {
       Object.values(attendanceData).filter((s) => s === "tubel").length || 0,
   };
 
-  const totalTidakHadir =
+  const totalKurang =
     stats.total - stats.hadir >= 0 ? stats.total - stats.hadir : 0;
 
   const reportDate = currentDate
@@ -110,7 +110,7 @@ export default function Home() {
   const summaryStats = {
     total: stats.total,
     hadir: stats.hadir,
-    tidakHadir: totalTidakHadir,
+    kurang: totalKurang,
     sakit: stats.sakit,
     izin: stats.izin,
     cuti: stats.cuti,
@@ -121,9 +121,10 @@ export default function Home() {
 
   // Generate report text
   const reportText = `Tanggal : ${reportDate}
-Jumlah Pegawai : ${stats.total}
+Jumlah : ${stats.total}
+Kurang : ${totalKurang}
 Hadir : ${stats.hadir}
-Tidak Hadir : ${totalTidakHadir}
+Keterangan :
 - Sakit : ${stats.sakit}
 - Izin : ${stats.izin}
 - Cuti : ${stats.cuti}

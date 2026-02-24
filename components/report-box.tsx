@@ -6,7 +6,7 @@ import Image from "next/image";
 interface ReportSummary {
   total: number;
   hadir: number;
-  tidakHadir: number;
+  kurang: number;
   sakit: number;
   izin: number;
   cuti: number;
@@ -27,9 +27,9 @@ export function ReportBox({
   isDisplayMode = false,
 }: ReportBoxProps) {
   const primaryRows = [
-    { label: "Jumlah Pegawai", value: summary.total },
+    { label: "Jumlah", value: summary.total },
+    { label: "Kurang", value: summary.kurang },
     { label: "Hadir", value: summary.hadir },
-    { label: "Tidak Hadir", value: summary.tidakHadir },
   ];
 
   const detailRows = [
@@ -71,7 +71,8 @@ export function ReportBox({
             ))}
           </div>
 
-          <div className="mt-3 md:mt-6 space-y-2 text-slate-900 w-fit mx-auto">
+          <div className="mt-3 md:mt-6 text-slate-900 w-fit mx-auto">
+            <p className="font-normal text-sm md:text-3xl mb-2">Keterangan</p>
             {detailRows.map((row) => (
               <div key={row.label} className="flex items-baseline gap-3 text-sm md:text-3xl">
                 <span className="font-normal w-40 md:w-64">{row.label}</span>
@@ -111,7 +112,8 @@ export function ReportBox({
             ))}
           </div>
 
-          <div className="pt-2 space-y-1 text-slate-900">
+          <div className="pt-2 text-slate-900">
+            <p className="font-normal text-sm mb-1">Keterangan</p>
             {detailRows.map((row) => (
               <div key={row.label} className="flex items-baseline gap-3 text-sm">
                 <span className="font-normal w-40">{row.label}</span>
