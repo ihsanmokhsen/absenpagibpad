@@ -5,8 +5,8 @@ import Image from "next/image";
 
 interface ReportSummary {
   total: number;
-  hadir: number;
   kurang: number;
+  hadir: number;
   sakit: number;
   izin: number;
   cuti: number;
@@ -18,13 +18,20 @@ interface ReportSummary {
 interface ReportBoxProps {
   summary: ReportSummary;
   reportDateText: string;
+  officerName?: string;
   isDisplayMode?: boolean;
+  absentByDepartment?: {
+    department: string;
+    employees: { name: string; status: string }[];
+  }[];
 }
 
 export function ReportBox({
   summary,
   reportDateText,
+  officerName = "-",
   isDisplayMode = false,
+  absentByDepartment = [],
 }: ReportBoxProps) {
   const primaryRows = [
     { label: "Jumlah", value: summary.total },
@@ -60,6 +67,9 @@ export function ReportBox({
           </h3>
           <p className="mt-2 text-sm md:text-xl text-slate-700 text-center">
             Tanggal: {reportDateText}
+          </p>
+          <p className="text-sm md:text-xl text-slate-700 text-center">
+            Petugas: {officerName}
           </p>
 
           <div className="mt-3 md:mt-6 space-y-2 text-slate-900 w-fit mx-auto">
@@ -102,6 +112,7 @@ export function ReportBox({
         </div>
         <div className="w-fit mx-auto text-left">
           <p className="text-sm text-slate-700">Tanggal: {reportDateText}</p>
+          <p className="text-sm text-slate-700">Petugas: {officerName}</p>
 
           <div className="space-y-1 text-slate-900 mt-2">
             {primaryRows.map((row) => (
@@ -120,6 +131,28 @@ export function ReportBox({
                 <span className="font-bold">{row.value}</span>
               </div>
             ))}
+          </div>
+
+          <div className="pt-4 text-slate-900">
+            <p className="font-semibold text-sm mb-2">Tidak Hadir per Bidang</p>
+            {absentByDepartment.length > 0 ? (
+              <div className="space-y-3">
+                {absentByDepartment.map((dept) => (
+                  <div key={dept.department}>
+                    <p className="font-semibold text-sm">{dept.department}</p>
+                    <div className="text-sm text-slate-700">
+                      {dept.employees.map((emp, idx) => (
+                        <p key={`${dept.department}-${idx}`}>
+                          - {emp.name} ({emp.status})
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">Semua pegawai hadir.</p>
+            )}
           </div>
         </div>
       </div>

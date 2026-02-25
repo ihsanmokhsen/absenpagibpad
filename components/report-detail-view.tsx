@@ -129,45 +129,7 @@ export function ReportDetailView({
       pdf.text(splitText, 10, yPosition);
       yPosition += splitText.length * 5 + 10;
 
-      // Status summaries by category
-      const statusCategories = [
-        { label: "SAKIT", employees: getSickEmployees(), color: "orange" },
-        { label: "IZIN", employees: getLeaveEmployees(), color: "blue" },
-        { label: "CUTI", employees: getCutiEmployees(), color: "teal" },
-        { label: "TERLAMBAT", employees: getLateEmployees(), color: "purple" },
-        { label: "TUGAS", employees: getTaskEmployees(), color: "indigo" },
-        { label: "TUBEL", employees: getTubelEmployees(), color: "yellow" },
-      ];
-
-      for (const category of statusCategories) {
-        if (category.employees.length > 0) {
-          if (yPosition > pageHeight - 30) {
-            pdf.addPage();
-            yPosition = 15;
-          }
-
-          pdf.setFont(undefined, "bold");
-          pdf.setFontSize(11);
-          pdf.text(`${category.label} (${category.employees.length} orang):`, 10, yPosition);
-          yPosition += 7;
-
-          pdf.setFont(undefined, "normal");
-          pdf.setFontSize(10);
-
-          category.employees.forEach((name) => {
-            if (yPosition > pageHeight - 15) {
-              pdf.addPage();
-              yPosition = 15;
-            }
-            pdf.text(`• ${name}`, 15, yPosition);
-            yPosition += 5;
-          });
-
-          yPosition += 5;
-        }
-      }
-
-      // Department breakdown
+      // Department breakdown (single source of detail to avoid duplication)
       if (yPosition > pageHeight - 40) {
         pdf.addPage();
         yPosition = 15;
@@ -179,7 +141,13 @@ export function ReportDetailView({
       yPosition += 10;
 
       for (const dept of departments) {
-        const deptEmployees = employees.filter((e) => e.department === dept);
+        const deptEmployees = employees
+          .filter((e) => e.department === dept)
+          .filter((emp) => (attendanceData[emp.id] || "terlambat") !== "hadir");
+
+        if (deptEmployees.length === 0) {
+          continue;
+        }
 
         if (yPosition > pageHeight - 50) {
           pdf.addPage();
@@ -433,14 +401,21 @@ export function ReportDetailView({
               const deptEmployees = employees.filter(
                 (e) => e.department === dept
               );
+              const absentDeptEmployees = deptEmployees.filter(
+                (emp) => (attendanceData[emp.id] || "terlambat") !== "hadir"
+              );
+
+              if (absentDeptEmployees.length === 0) {
+                return null;
+              }
 
               return (
                 <Card key={dept} className="bg-white p-4 border-slate-300">
                   <h4 className="font-bold text-slate-900 mb-3">
-                    {dept} ({deptEmployees.length} orang)
+                    {dept} ({absentDeptEmployees.length} orang)
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {deptEmployees.map((emp) => {
+                    {absentDeptEmployees.map((emp) => {
                       const status = attendanceData[emp.id] || "terlambat";
                       const statusLabel = {
                         hadir: "✓ Hadir",

@@ -11,6 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Monitor, HelpCircle } from "lucide-react";
 import Image from "next/image";
 
+const ADMIN_PASSWORD = "Bpad2026";
+const ADMIN_NAMES = [
+  "Aprianus Aryantho Rondak, S.STP",
+  "Kristoforus R. Hayong, S.Kom., MM",
+  "Marselinus Tahu Tetik",
+  "Joachim A. K. Ulin, SM",
+  "Sandy A. J. L. Pranadjaya, SH",
+  "Melkisedek Koa, A.Md",
+];
+
 export default function Home() {
   const [attendanceData, setAttendanceData] = useState<
     Record<string, AttendanceStatus>
@@ -21,6 +31,10 @@ export default function Home() {
   const [isDisplayMode, setIsDisplayMode] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+  const [selectedAdminName, setSelectedAdminName] = useState("");
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [loggedAdminName, setLoggedAdminName] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   // Initialize attendance data from localStorage
   useEffect(() => {
@@ -38,6 +52,14 @@ export default function Home() {
       }
     } else {
       initializeAttendance();
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedAdmin = localStorage.getItem("logged-admin-name");
+    if (storedAdmin && ADMIN_NAMES.includes(storedAdmin)) {
+      setLoggedAdminName(storedAdmin);
+      setSelectedAdminName(storedAdmin);
     }
   }, []);
 
@@ -75,6 +97,30 @@ export default function Home() {
 
   const handleReset = () => {
     initializeAttendance();
+  };
+
+  const handleAdminLogin = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedAdminName) {
+      setLoginError("Pilih nama petugas terlebih dahulu.");
+      return;
+    }
+
+    if (adminPasswordInput !== ADMIN_PASSWORD) {
+      setLoginError("Password salah.");
+      return;
+    }
+
+    setLoggedAdminName(selectedAdminName);
+    localStorage.setItem("logged-admin-name", selectedAdminName);
+    setLoginError("");
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem("logged-admin-name");
+    setLoggedAdminName("");
+    setAdminPasswordInput("");
+    setLoginError("");
   };
 
   // Calculate statistics
@@ -119,8 +165,39 @@ export default function Home() {
     tubel: stats.tubel,
   };
 
+  const absentStatusLabels: Record<AttendanceStatus, string> = {
+    hadir: "Hadir",
+    sakit: "Sakit",
+    izin: "Izin",
+    cuti: "Cuti",
+    terlambat: "Terlambat",
+    tugas: "Tugas",
+    tubel: "Tubel",
+  };
+
+  const absentByDepartment = departments
+    .map((department) => {
+      const employeesInDepartment = employees
+        .filter((emp) => emp.department === department)
+        .filter((emp) => (attendanceData[emp.id] || "terlambat") !== "hadir")
+        .map((emp) => {
+          const status = attendanceData[emp.id] || "terlambat";
+          return {
+            name: emp.name,
+            status: absentStatusLabels[status],
+          };
+        });
+
+      return {
+        department,
+        employees: employeesInDepartment,
+      };
+    })
+    .filter((item) => item.employees.length > 0);
+
   // Generate report text
   const reportText = `Tanggal : ${reportDate}
+Petugas : ${loggedAdminName || "-"}
 Jumlah : ${stats.total}
 Kurang : ${totalKurang}
 Hadir : ${stats.hadir}
@@ -143,6 +220,77 @@ Keterangan :
     );
   }
 
+  if (!loggedAdminName) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4 md:p-8">
+        <div className="max-w-md mx-auto mt-10">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-5 shadow-sm">
+            <div className="text-center space-y-2">
+              <div className="flex justify-center">
+                <Image
+                  src="/logo-bpad.png"
+                  alt="Logo BPAD Provinsi NTT"
+                  width={64}
+                  height={68}
+                  className="h-16 w-16 object-contain"
+                  priority
+                />
+              </div>
+              <h1 className="text-xl font-bold text-slate-900">Login Admin</h1>
+              <p className="text-sm text-slate-600">
+                Pilih nama petugas lalu masukkan password.
+              </p>
+            </div>
+
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-700">
+                  Nama Petugas
+                </label>
+                <select
+                  value={selectedAdminName}
+                  onChange={(e) => setSelectedAdminName(e.target.value)}
+                  className="w-full h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                >
+                  <option value="">Pilih petugas</option>
+                  {ADMIN_NAMES.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-700">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  className="w-full h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                  placeholder="Masukkan password"
+                />
+              </div>
+
+              {loginError && (
+                <p className="text-sm text-red-600">{loginError}</p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Login
+              </Button>
+            </form>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (isDisplayMode) {
     return (
       <div className="w-full h-screen bg-white flex flex-col items-center justify-center p-3 md:p-8 overflow-hidden">
@@ -155,7 +303,9 @@ Keterangan :
         <ReportBox
           summary={summaryStats}
           reportDateText={reportDate}
+          officerName={loggedAdminName}
           isDisplayMode={true}
+          absentByDepartment={absentByDepartment}
         />
       </div>
     );
@@ -187,16 +337,28 @@ Keterangan :
                   day: "numeric",
                 })}
               </p>
+              <p className="text-sm text-slate-600">
+                Petugas: <span className="font-semibold">{loggedAdminName}</span>
+              </p>
             </div>
           </div>
-          <Button
-            onClick={() => setShowGuide(true)}
-            variant="outline"
-            className="bg-transparent"
-          >
-            <HelpCircle className="w-5 h-5 mr-2" />
-            Panduan
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowGuide(true)}
+              variant="outline"
+              className="bg-transparent"
+            >
+              <HelpCircle className="w-5 h-5 mr-2" />
+              Panduan
+            </Button>
+            <Button
+              onClick={handleAdminLogout}
+              variant="outline"
+              className="bg-transparent"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -290,6 +452,8 @@ Keterangan :
             <ReportBox
               summary={summaryStats}
               reportDateText={reportDate}
+              officerName={loggedAdminName}
+              absentByDepartment={absentByDepartment}
             />
           </div>
         )}
@@ -316,6 +480,8 @@ Keterangan :
                 <ReportBox
                   summary={summaryStats}
                   reportDateText={reportDate}
+                  officerName={loggedAdminName}
+                  absentByDepartment={absentByDepartment}
                 />
               </div>
               <div className="flex gap-3 p-6 pt-0 border-t border-slate-200 shrink-0">
