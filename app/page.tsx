@@ -21,6 +21,14 @@ const ADMIN_NAMES = [
   "Melkisedek Koa, A.Md",
 ];
 
+const getLocalDateKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function Home() {
   const [attendanceData, setAttendanceData] = useState<
     Record<string, AttendanceStatus>
@@ -36,23 +44,51 @@ export default function Home() {
   const [loggedAdminName, setLoggedAdminName] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Initialize attendance data from localStorage
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setCurrentDate(today);
+  const getInitialAttendance = () => {
+    const initial: Record<string, AttendanceStatus> = {};
+    employees.forEach((emp) => {
+      initial[emp.id] = "terlambat";
+    });
+    return initial;
+  };
 
-    const storageKey = `attendance-${today}`;
+  // Initialize all employees as "terlambat"
+  const initializeAttendance = () => {
+    setAttendanceData(getInitialAttendance());
+  };
+
+  const loadAttendanceByDate = (dateKey: string) => {
+    setCurrentDate(dateKey);
+    const storageKey = `attendance-${dateKey}`;
     const stored = localStorage.getItem(storageKey);
 
     if (stored) {
       try {
         setAttendanceData(JSON.parse(stored));
+        return;
       } catch {
-        initializeAttendance();
+        // fall through to defaults
       }
-    } else {
-      initializeAttendance();
     }
+
+    setAttendanceData(getInitialAttendance());
+  };
+
+  // Initialize attendance data from localStorage and auto-switch when day changes
+  useEffect(() => {
+    loadAttendanceByDate(getLocalDateKey());
+
+    const timer = window.setInterval(() => {
+      const today = getLocalDateKey();
+      setCurrentDate((prevDate) => {
+        if (prevDate && prevDate !== today) {
+          loadAttendanceByDate(today);
+        }
+        return prevDate || today;
+      });
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -62,15 +98,6 @@ export default function Home() {
       setSelectedAdminName(storedAdmin);
     }
   }, []);
-
-  // Initialize all employees as "terlambat"
-  const initializeAttendance = () => {
-    const initial: Record<string, AttendanceStatus> = {};
-    employees.forEach((emp) => {
-      initial[emp.id] = "terlambat";
-    });
-    setAttendanceData(initial);
-  };
 
   // Save to localStorage whenever attendance changes
   useEffect(() => {
@@ -147,6 +174,7 @@ export default function Home() {
 
   const reportDate = currentDate
     ? new Date(currentDate).toLocaleDateString("id-ID", {
+        weekday: "long",
         day: "2-digit",
         month: "long",
         year: "numeric",
@@ -196,7 +224,7 @@ export default function Home() {
     .filter((item) => item.employees.length > 0);
 
   // Generate report text
-  const reportText = `Tanggal : ${reportDate}
+  const reportText = `Hari/Tanggal : ${reportDate}
 Petugas : ${loggedAdminName || "-"}
 Jumlah : ${stats.total}
 Kurang : ${totalKurang}

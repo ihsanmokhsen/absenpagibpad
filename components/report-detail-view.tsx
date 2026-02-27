@@ -117,7 +117,7 @@ export function ReportDetailView({
         day: "numeric",
       });
       pdf.setFontSize(10);
-      pdf.text(`Tanggal: ${dateStr}`, pageWidth / 2, yPosition, {
+      pdf.text(`Hari/Tanggal: ${dateStr}`, pageWidth / 2, yPosition, {
         align: "center",
       });
       yPosition += 10;

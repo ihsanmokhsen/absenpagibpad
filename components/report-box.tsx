@@ -66,7 +66,7 @@ export function ReportBox({
             BPAD Provinsi Nusa Tenggara Timur
           </h3>
           <p className="mt-2 text-sm md:text-xl text-slate-700 text-center">
-            Tanggal: {reportDateText}
+            Hari/Tanggal: {reportDateText}
           </p>
           <p className="text-sm md:text-xl text-slate-700 text-center">
             Petugas: {officerName}
@@ -111,7 +111,7 @@ export function ReportBox({
           </h3>
         </div>
         <div className="w-fit mx-auto text-left">
-          <p className="text-sm text-slate-700">Tanggal: {reportDateText}</p>
+          <p className="text-sm text-slate-700">Hari/Tanggal: {reportDateText}</p>
           <p className="text-sm text-slate-700">Petugas: {officerName}</p>
 
           <div className="space-y-1 text-slate-900 mt-2">
